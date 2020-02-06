@@ -55,6 +55,10 @@ def choose_player():
     filename = 'webapp_dict_player.sav'
     df_player  = pickle.load(open(filename, 'rb'))
 
+    # Make sure the suggested replacement is not in the team
+    for p_id in player_id_vec:
+        df_player = df_player[ df_player.index.values != p_id ]
+
     player_rep_id_vec   = df_player.index.values
     player_rep_name_vec = df_player['name'].values
 
@@ -67,7 +71,7 @@ def choose_player():
     win_stars = df_player['win_stars'].values
     win_rate = df_player['win_rate'].values
 
-    n_rep = len(player_rep_id_vec)
+    n_rep = len(win_stars)
 
     return render_template("choose_player.html", title = 'CSGO Moneyball', team_name=team_name, team_id=team_id, 
         player_name_vec=player_name_vec, player_id_vec=player_id_vec,
@@ -149,7 +153,7 @@ def results():
         
         team_id = str(request.args.get('team', ''))
         player_id = str(request.args.get('player', ''))
-        rep_id = str(request.args.get('rep_id', ''))
+        ideal_id = str(request.args.get('ideal_id', ''))
 
         # Open the team df
         filename = 'webapp_dict_team.sav'
@@ -162,90 +166,51 @@ def results():
         team_name = df_team.loc[int(team_id)]['team_name']
 
         player_name = df_player.loc[int(player_id)]['name']
-        rep_name    = df_player.loc[int(rep_id)]['name']
+        ideal_name  = df_player.loc[int(ideal_id)]['name']
 
-        # Get the features for the model
 
         tmp = df_team.loc[int(team_id)]
+
+        player_name_vec = [ tmp.player_name_1, tmp.player_name_2, tmp.player_name_3, tmp.player_name_4, tmp.player_name_5 ]    
+        player_id_vec = [ tmp.player_id_1, tmp.player_id_2, tmp.player_id_3, tmp.player_id_4, tmp.player_id_5 ]
         
-        player_name_vec = [ 
-            tmp.player_name_1, tmp.player_name_2, tmp.player_name_3, tmp.player_name_4, tmp.player_name_5
-        ]
+        tier_sug_ids = csgo.get_suggestions( int(ideal_id), player_id_vec )
 
-        player_id_vec = [ 
-            tmp.player_id_1, tmp.player_id_2, tmp.player_id_3, tmp.player_id_4, tmp.player_id_5
-        ]
+        sug_results = csgo.get_proba_change( int(team_id), int(player_id), tier_sug_ids)
+        # sug_results = {}
+        # for tier in range(1,6):
 
-        rating_team = 0.0
-        prize_team  = 0.0
+        #     sug_results[tier] = {}
+        #     sug_results[tier]['name']   = []
 
-        rating_new = 0.0
-        prize_new  = 0.0
+        #     sug_results[tier]['rating'] = []
+        #     sug_results[tier]['rating_stars'] = []
 
-        for id_tmp in player_id_vec:
-            rating_team = rating_team + df_player.loc[id_tmp]['rating']
-            prize_team  = prize_team + df_player.loc[id_tmp]['prize_rating']
+        #     sug_results[tier]['kills_per_round'] = []
+        #     sug_results[tier]['kills_stars'] = []
 
-            if id_tmp == int(player_id):
-                # Use the replacement
-                rating_new = rating_new + df_player.loc[int(rep_id)]['rating']
-                prize_new  = prize_new + df_player.loc[int(rep_id)]['prize_rating']
-            else:
-                rating_new = rating_new + df_player.loc[id_tmp]['rating']
-                prize_new  = prize_new + df_player.loc[id_tmp]['prize_rating']
+        #     sug_results[tier]['win_rate'] = []
+        #     sug_results[tier]['win_stars'] = []    
+
+        #     sug_results[tier]['change_proba'] = []          
 
 
-        rating_team = rating_team / 5.0
-        prize_team  = prize_team / 5.0
+        #     for p_id in tier_sug_ids[tier]:
+        #         sug_results[tier]['name'].append( df_player.loc[p_id]['name'] )
+                
+        #         sug_results[tier]['rating'].append( "%.2f" % df_player.loc[p_id]['rating'] )
+        #         sug_results[tier]['kills_per_round'].append( "%.2f" % df_player.loc[p_id]['kills_per_round'] )
+        #         sug_results[tier]['win_rate'].append( "%.2f" % df_player.loc[p_id]['win_rate'] )
 
-        rating_new = rating_new / 5.0
-        prize_new  = prize_new / 5.0
-
-        rating_op = df_team.loc[int(team_id)]['avg_op_rating']
-        prize_op = df_team.loc[int(team_id)]['avg_op_prize_rating']
-
-        # Open the fit model
-        filename = 'model_jan30.sav'
-        loaded_model = pickle.load(open(filename, 'rb'))
-
-        # Before the change
-        if prize_team > prize_op:
-            features = [[ (rating_team-rating_op), (prize_team-prize_op) ]]
-        else:
-            features = [[ -(rating_team-rating_op), -(prize_team-prize_op) ]]
-
-        prob_before = loaded_model.predict_proba(features)
-
-        # After the change
-        if prize_new > prize_op:
-            features = [[ (rating_new-rating_op), (prize_new-prize_op) ]]
-        else:
-            features = [[ -(rating_new-rating_op), -(prize_new-prize_op) ]]
-
-        prob_after = loaded_model.predict_proba(features)
-
-        prob_change = '{:.1%}'.format(prob_after[0][1] - prob_before[0][1])
-        
-        # N = 400
-        # x = np.random.random(size=N) * 100
-        # y = np.random.random(size=N) * 100
-        # radii = np.random.random(size=N) * 1.5
-        # colors = [
-        #     "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+2*x, 30+2*y)
-        # ]
-
-        # TOOLS="hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
-
-        # p = figure(tools=TOOLS)
-
-        # p.scatter(x, y, radius=radii,
-        #         fill_color=colors, fill_alpha=0.6,
-        #         line_color=None)
-
-        # output_file("color_scatter.html", title="color_scatter.py example")
+        #         sug_results[tier]['change_proba'].append( "%.2f" % 0.0 )
+                
 
 
-    return render_template('results.html',title='Results',team_name=team_name,player_name=player_name,rep_name=rep_name,
-        rating_team=rating_team,prob_before=prob_before,prob_after=prob_after,
-        prob_change=prob_change,player_name_vec=player_name_vec,player_id_vec=player_id_vec,player_id=int(player_id))
+    return render_template('results.html',title='Results',
+        team_name=team_name,
+        sug_results=sug_results,
+        player_name_vec=player_name_vec,
+        player_name=player_name,
+        player_id_vec=player_id_vec,
+        player_id=int(player_id))
 
