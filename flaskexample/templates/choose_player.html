@@ -1,0 +1,342 @@
+<!-- Based on https://github.com/anair3007/daycarefit -->
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        .checked {
+            color: orange;
+        }
+    </style>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+        integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <!-- <link href="../static/cover.css" rel="stylesheet"> -->
+    <title>CSGO Moneyball</title>
+
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        #myInput {
+            background-image: url('/css/searchicon.png');
+            background-position: 10px 12px;
+            background-repeat: no-repeat;
+            width: 100%;
+            font-size: 16px;
+            padding: 12px 20px 12px 40px;
+            border: 1px solid #ddd;
+            margin-bottom: 12px;
+        }
+
+        #myUL {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #myUL li a {
+            border: 1px solid #ddd;
+            margin-top: -1px;
+            /* Prevent double borders */
+            background-color: #f6f6f6;
+            padding: 12px;
+            text-decoration: none;
+            font-size: 18px;
+            color: black;
+            display: block
+        }
+
+        #myUL li a:hover:not(.header) {
+            background-color: #eee;
+        }
+    </style>
+
+</head>
+
+<body>
+    <!-- Page Content -->
+    <div class="text-dark container col-9">
+        <!-- Jumbotron Header -->
+        <header class=" jumbotron jumbotron-fluid my-0 p-4">
+            <h2 class="strong">CSGO Moneyball<span class="small text-muted"> </span></h2>
+            <hr class="my-4">
+            <p class="lead">Assesing Counter Strike:Global Offensive roster changes</p>
+        </header>
+        <!-- Page Features -->
+        <div class="mt-5 row text-center">
+            <div class="mx-auto">
+                <div class="bg-light text-dark card mx-auto">
+                    <div class="card-body">
+
+                        <h4 class="mb-2 card-title">Step 2: Select player to be replaced and replacement:</h4>
+
+                        <h5 class="mt-4">Selected team:</h5>
+
+                        <form action="results" method="GET" role="form" id="myForm">
+                        
+                            <li class="list-group-item list-group-item-primary" name="team" value={{team_id}}>
+                                {{team_name}}</li>
+                        
+                            <input type="hidden" name="team" value={{team_id}}></option>
+                        
+                            <label class="mt-4" for="player">Select a player to be replaced:</label>
+                        
+                            <select class="form-control custom-select" name="player" id="player">
+                        
+                                {%for ind in range(0,5)%}
+                                <option value={{player_id_vec[ind]}}>{{player_name_vec[ind]}}</option>
+                                {%endfor%}
+                        
+                            </select>
+                        
+                            <label class="mt-4" for="player">Select your ideal replacement:</label>
+                            <!-- <span class="fa fa-star checked" style="font-size:18px;color:red"></span>
+                            <span class="fa fa-star checked"></span>
+                            <span class="fa fa-star checked"></span>
+                            <span class="fa fa-star"></span>
+                            <span class="fa fa-star"></span> -->
+                        
+                        
+                            <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for a replacement player.."
+                                title="Type in a name">
+                        
+
+                            <table id="myUL" class='table table-bordered'>
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Name</th>
+                                        <th>Prize Rating</th>
+                                        <th>Rating</th>
+                                        <th>Win Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>                                                                   
+                             
+
+                            <!-- <ul id="myUL"> -->
+                                {%for ind in range(0,n_rep)%}
+                                
+                                {% if ind < 11 %}
+                                {% if ind == 0%}
+                                
+                                    <tr valign="middle">
+                                    <td> 
+                                        <input type="radio" checked name=ideal_id value={{player_rep_id_vec[ind]}}></input>
+                                    </td> 
+                                    <td>
+                                        {{player_rep_name_vec[ind]}}
+                                    </td>
+                                    <td>
+                                        {% for ind2 in range(0,5) %}
+
+                                        {% if ind2 < prize_stars[ind] %}
+                                        <b><span style="font-size:18px;color:green">&#36;</span></b>
+                                        {%else%}
+                                        <b><span style="font-size:18px;color:gainsboro">&#36;</span></b>
+                                        <!-- <span class="fa fa-star" style="font-size:18px;"></span> -->
+                                        {%endif%}
+
+                                        {%endfor%}
+                                        ({{prize_rating[ind]}})
+                                    </td>
+                                    <td>
+                                        {% for ind2 in range(0,5) %}
+
+                                        {% if ind2 < rating_stars[ind] %}
+                                        <span class="fa fa-star checked" style="font-size:18px;"></span>
+                                        {%else%}
+                                        <span class="fa fa-star" style="font-size:18px;"></span>
+                                        {%endif%}
+
+                                        {%endfor%}
+                                        ({{rating[ind]}})
+                                    </td>
+                                    <td>
+                                        {% for ind2 in range(0,5) %}
+
+                                        {% if ind2 < win_stars[ind] %}
+                                        <span class="fa fa-star checked" style="font-size:18px;"></span>
+                                        {%else%}
+                                        <span class="fa fa-star" style="font-size:18px;"></span>
+                                        {%endif%}
+
+                                        {%endfor%}
+                                        ({{win_rate[ind]}})
+                                    </td>
+                                </tr>
+                                
+                                {% else %}
+                                
+                                    <tr valign="middle">
+                                    <td> 
+                                        <input type="radio" name=ideal_id value={{player_rep_id_vec[ind]}}></input>
+                                    </td> 
+                                    <td>
+                                        {{player_rep_name_vec[ind]}}
+                                    </td>
+                                    <td>
+                                        {% for ind2 in range(0,5) %}
+
+                                        {% if ind2 < prize_stars[ind] %}
+                                        <b><span style="font-size:18px;color:green">&#36;</span></b>
+                                        {%else%}
+                                        <b><span style="font-size:18px;color:gainsboro">&#36;</span></b>
+                                        <!-- <span class="fa fa-star" style="font-size:18px;"></span> -->
+                                        {%endif%}
+
+                                        {%endfor%}
+                                        ({{prize_rating[ind]}})
+                                    </td>
+                                    <td>
+                                        {% for ind2 in range(0,5) %}
+
+                                        {% if ind2 < rating_stars[ind] %}
+                                        <span class="fa fa-star checked" style="font-size:18px;"></span>
+                                        {%else%}
+                                        <span class="fa fa-star" style="font-size:18px;"></span>
+                                        {%endif%}
+
+                                        {%endfor%}
+                                        ({{rating[ind]}})
+                                    </td>
+                                    <td>
+                                        {% for ind2 in range(0,5) %}
+
+                                        {% if ind2 < win_stars[ind] %}
+                                        <span class="fa fa-star checked" style="font-size:18px;"></span>
+                                        {%else%}
+                                        <span class="fa fa-star" style="font-size:18px;"></span>
+                                        {%endif%}
+
+                                        {%endfor%}
+                                        ({{win_rate[ind]}})
+                                    </td>
+                                </tr>
+                                
+                                {% endif %}
+                                {% else %}
+                                    <tr valign="middle" style="display:none;">
+                                        <td>
+                                            <input type="radio" name=ideal_id value={{player_rep_id_vec[ind]}}></input>
+                                        </td>
+                                        <td>
+                                            {{player_rep_name_vec[ind]}}
+                                        </td>
+                                        <td>
+                                            {% for ind2 in range(0,5) %}
+                                    
+                                            {% if ind2 < prize_stars[ind] %}
+                                        <b><span style="font-size:18px;color:green">&#36;</span></b>
+                                        {%else%}
+                                        <b><span style="font-size:18px;color:gainsboro">&#36;</span></b>
+                                        <!-- <span class="fa fa-star" style="font-size:18px;"></span> -->
+                                        {%endif%}
+                                    
+                                            {%endfor%}
+                                            ({{prize_rating[ind]}})
+                                        </td>
+                                        <td>
+                                            {% for ind2 in range(0,5) %}
+    
+                                            {% if ind2 < rating_stars[ind] %}
+                                            <span class="fa fa-star checked" style="font-size:18px;"></span>
+                                            {%else%}
+                                            <span class="fa fa-star" style="font-size:18px;"></span>
+                                            {%endif%}
+    
+                                            {%endfor%}
+                                            ({{rating[ind]}})
+                                        </td>
+                                        <td>
+                                            {% for ind2 in range(0,5) %}
+    
+                                            {% if ind2 < win_stars[ind] %}
+                                            <span class="fa fa-star checked" style="font-size:18px;"></span>
+                                            {%else%}
+                                            <span class="fa fa-star" style="font-size:18px;"></span>
+                                            {%endif%}
+    
+                                            {%endfor%}
+                                            ({{win_rate[ind]}})
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            
+                                {% endfor %}
+
+                                (Total number of players = {{n_rep}})
+                                <br>
+                            </tbody>
+                        </table>
+                                <button type="submit" class="mt-4 mb-1 btn btn-success">Confirm Player</button>
+
+                        </form>
+
+                        <form action="index" method="GET" role="form">
+                            <button type="submit" class="mt-4 mb-1 btn btn-success">Reset</button>
+                        </form>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function myFunction() {
+            var input, filter, ul, li, a, i, txtValue;
+            input = document.getElementById("myInput");
+            filter = input.value.toUpperCase();
+            ul = document.getElementById("myUL");
+            li = ul.getElementsByTagName("tr");
+
+            //console.log(li.length)
+
+            for (i = 0; i < li.length; i++) {
+
+                li[i].style.display = "";
+
+            }
+            
+            var tmp = []
+
+            for (i = 1; i < li.length; i++) {
+                //a = li[i].getElementsByTagName("a")[0];
+                a = li[i].getElementsByTagName("td")[1];
+                txtValue = a.textContent || a.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    li[i].style.display = "";
+                    tmp.push(i)
+                } else {
+                    li[i].style.display = "none";
+                }
+                
+                //console.log(a)
+
+            }
+            for (i = 0; i < tmp.length; i++) {
+                if (i > 10) {
+                    li[tmp[i]].style.display = "none";
+                }
+            }
+            
+            //console.log(tmp.length)
+        }
+    </script>
+
+
+</body>
+
+</html>
