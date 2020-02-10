@@ -6,27 +6,36 @@ import pickle
 
 def get_proba_change( team_id, player_id, tier_sug_ids):
 
-# Open the team df
-    filename = 'webapp_dict_team.sav'
+    # Open the team df
+    filename = 'webapp_dict_team_feb9.sav'
     df_team  = pickle.load(open(filename, 'rb'))
 
     # Open the player df
-    filename = 'webapp_dict_player.sav'
+    filename = 'webapp_dict_player_feb9.sav'
     df_player  = pickle.load(open(filename, 'rb'))
 
     # Get the features for the model
     tmp = df_team.loc[int(team_id)]
     
-    rating_op = df_team.loc[team_id]['avg_op_rating']
-    prize_op  = df_team.loc[team_id]['avg_op_prize_rating']
+    feature_names = ['prize_rating',  'score_dif', 
+        'win_rate', 'scaled_win', 'scaled_rating','win_rate_map', 'kd_per_round',
+        'momentum']
+
+    # rating_op = df_team.loc[team_id]['avg_op_rating']
+    # prize_op  = df_team.loc[team_id]['avg_op_prize_rating']
     
     player_id_vec = [ 
         tmp.player_id_1, tmp.player_id_2, tmp.player_id_3, tmp.player_id_4, tmp.player_id_5
     ]
 
     # Open the fit model
-    filename = 'model_jan30.sav'
+    # filename = 'model_jan30.sav'
+    filename = 'final_model_rand_forest_feb_9_2020.sav'
     loaded_model = pickle.load(open(filename, 'rb'))
+
+
+    filename = 'dict_normalization_feb9.sav'
+    dict_normalization = pickle.load(open(filename, 'rb'))
 
 
     sug_results = {}
@@ -62,48 +71,57 @@ def get_proba_change( team_id, player_id, tier_sug_ids):
             rep_id = p_id
 
 
+            # rating_team = 0.0
+            # prize_team  = 0.0
 
-            rating_team = 0.0
-            prize_team  = 0.0
-
-            rating_new = 0.0
-            prize_new  = 0.0
-
-            for id_tmp in player_id_vec:
-                rating_team = rating_team + df_player.loc[id_tmp]['rating']
-                prize_team  = prize_team + df_player.loc[id_tmp]['prize_rating']
-
-                if id_tmp == int(player_id):
-                    # Use the replacement
-                    rating_new = rating_new + df_player.loc[rep_id]['rating']
-                    prize_new  = prize_new + df_player.loc[rep_id]['prize_rating']
-                else:
-                    rating_new = rating_new + df_player.loc[id_tmp]['rating']
-                    prize_new  = prize_new + df_player.loc[id_tmp]['prize_rating']
-
-            # Average
-            rating_team = rating_team / 5.0
-            prize_team  = prize_team / 5.0
-
-            rating_new = rating_new / 5.0
-            prize_new  = prize_new / 5.0
+            # rating_new = 0.0
+            # prize_new  = 0.0
 
             
-            # Before the change
-            if prize_team > prize_op:
-                features = [[ (rating_team-rating_op), (prize_team-prize_op) ]]
-            else:
-                features = [[ -(rating_team-rating_op), -(prize_team-prize_op) ]]
+            features_before = []
+            features_after  = []
 
-            prob_before = loaded_model.predict_proba(features)
+            for feat in feature_names:
 
-            # After the change
-            if prize_new > prize_op:
-                features = [[ (rating_new-rating_op), (prize_new-prize_op) ]]
-            else:
-                features = [[ -(rating_new-rating_op), -(prize_new-prize_op) ]]
+                feat_team = 0.0  
+                feat_new  = 0.0          
 
-            prob_after = loaded_model.predict_proba(features)
+                for id_tmp in player_id_vec:
+
+                    feat_team = feat_team + df_player.loc[id_tmp][feat]
+
+                #     rating_team = rating_team + df_player.loc[id_tmp]['rating']
+                #     prize_team  = prize_team + df_player.loc[id_tmp]['prize_rating']
+
+                    if id_tmp == int(player_id):
+                        # Use the replacement
+                        feat_new = feat_new + df_player.loc[rep_id][feat]
+                    else:
+                        feat_new = feat_new + df_player.loc[id_tmp][feat]
+
+                # Average
+                feat_team = feat_team / 5.0
+                feat_new  = feat_new / 5.0
+
+                # Normalize!
+                feat_team = (feat_team - dict_normalization[feat]['mean'])/dict_normalization[feat]['std']
+                feat_new  = (feat_new  - dict_normalization[feat]['mean'])/dict_normalization[feat]['std']
+
+
+                features_before.append( feat_team )
+                features_after.append ( feat_new )
+                # # Average
+                # rating_team = rating_team / 5.0
+                # prize_team  = prize_team / 5.0
+
+                # rating_new = rating_new / 5.0
+                # prize_new  = prize_new / 5.0
+
+            
+            
+            prob_before = loaded_model.predict_proba([features_before])
+            prob_after  = loaded_model.predict_proba([features_after])
+                     
 
             #prob_change = '{:.1%}'.format(prob_after[0][1] - prob_before[0][1])
             prob_change = (prob_after[0][1] - prob_before[0][1])
@@ -126,7 +144,7 @@ def get_suggestions( player_id, team_player_ids ):
     n_per_tier = 5
 
     # Open the player df
-    filename = 'webapp_dict_player.sav'
+    filename = 'webapp_dict_player_feb9.sav'
     df_dist  = pickle.load(open(filename, 'rb'))
 
     # Remove the players in the team

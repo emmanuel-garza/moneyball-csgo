@@ -54,7 +54,7 @@
             <h2 class="strong" style="text-align:center;">CS:GO Moneyball<br><img src="static/csgo.png" height=50px>
             </h2>
             <hr class="my-4">
-            <p class="lead" style="text-align:center;">Assesing "Counter Strike:Global Offensive" roster changes</p>
+            <p class="lead" style="text-align:center;">Assessing "Counter Strike:Global Offensive" roster changes</p>
         </header>
 
 
@@ -88,16 +88,28 @@
                             {%endfor%}
                         </table>
 
+                        <h5 class="mb-2 card-title">Suggested Potential Replacements and the predicted change in the probability of winning against the team's average opponent:
+                        </h5>
 
                         {% for tier in range(0,5)%}
                         <script>
                             $(document).ready(function () {
                                 $('#myUL{{tier}}').DataTable({
-                                    "dom": '<"clear">'
+                                    "dom": '<"clear">',
+                                    "order":[[4,"desc"]],
+                                    "columnDefs": [
+                                        { "width": "100px", "targets": 0 },
+                                        { "width": "70px", "targets": 1 },
+                                        { "width": "70px", "targets": 2 },
+                                        { "width": "70px", "targets": 3 },
+                                        { "width": "70px", "targets": 4 }
+                                    ]
                                 });
                             });
                         </script>
 
+                        
+                        Money tier: 
                         {% for ind2 in range(0,5) %}
                         {% if ind2 >= tier %}
                         <b><span style="font-size:18px;color:green">&#36;</span></b>
@@ -106,6 +118,7 @@
                         {%endif%}
                         {%endfor%}
 
+                        
                         <table id="myUL{{tier}}" class='table table-striped table-bordered'>
 
                             <thead>

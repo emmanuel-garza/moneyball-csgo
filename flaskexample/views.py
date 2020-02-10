@@ -17,7 +17,7 @@ from sklearn.linear_model import LogisticRegression
 def index():
 
     # Open the team dictionary
-    filename = 'webapp_dict_team.sav'
+    filename = 'webapp_dict_team_feb9.sav'
     df_team  = pickle.load(open(filename, 'rb'))
 
     team_names = df_team['team_name'].values[:]
@@ -37,8 +37,12 @@ def choose_player():
         #players = get_players(team_id)
 
     # Open the team df
-    filename = 'webapp_dict_team.sav'
+    filename = 'webapp_dict_team_feb9.sav'
     df_team  = pickle.load(open(filename, 'rb'))
+
+    # Replacement options
+    filename = 'webapp_dict_player_feb9.sav'
+    df_player  = pickle.load(open(filename, 'rb'))
 
     tmp = df_team.loc[int(team_id)]
     team_name = tmp.team_name
@@ -51,9 +55,26 @@ def choose_player():
         tmp.player_id_1, tmp.player_id_2, tmp.player_id_3, tmp.player_id_4, tmp.player_id_5
     ]
 
-    # Replacement options
-    filename = 'webapp_dict_player.sav'
-    df_player  = pickle.load(open(filename, 'rb'))
+    team_rating_vec = []
+    team_prize_vec  = []
+    team_kill_vec   = []
+
+    team_st_rating_vec = []
+    team_st_prize_vec  = []
+    team_st_kill_vec   = []
+
+    for player_id_tmp in player_id_vec:
+        team_rating_vec.append( df_player.at[player_id_tmp,'rating'])
+        team_prize_vec.append( df_player.at[player_id_tmp,'prize_rating'])
+        team_kill_vec.append( df_player.at[player_id_tmp,'kills_per_round'])
+
+        # Stars
+        team_st_rating_vec.append( df_player.at[player_id_tmp,'rating_stars'])
+        team_st_prize_vec.append( df_player.at[player_id_tmp,'prize_stars'])
+        team_st_kill_vec.append( df_player.at[player_id_tmp,'kills_stars'])
+        
+
+    
 
     # Make sure the suggested replacement is not in the team
     for p_id in player_id_vec:
@@ -75,6 +96,12 @@ def choose_player():
 
     return render_template("choose_player.html", title = 'CSGO Moneyball', team_name=team_name, team_id=team_id, 
         player_name_vec=player_name_vec, player_id_vec=player_id_vec,
+        team_rating_vec = ["%.2f" % number for number in team_rating_vec],
+        team_prize_vec  = ["%.2f" % number for number in team_prize_vec],
+        team_kill_vec   = ["%.2f" % number for number in team_kill_vec],
+        team_st_rating_vec = team_st_rating_vec,
+        team_st_prize_vec  = team_st_prize_vec,
+        team_st_kill_vec   = team_st_kill_vec,
         player_rep_id_vec=player_rep_id_vec, player_rep_name_vec=player_rep_name_vec, n_rep=n_rep,
         prize_stars=prize_stars,
         rating_stars=rating_stars,
@@ -84,66 +111,6 @@ def choose_player():
         win_rate=["%.2f" % number for number in win_rate] )
 
 
-
-# Suggest players
-@app.route('/suggest', methods=['GET','POST'])
-def suggest():
-    if request.method == 'GET':
-        
-        team_id = str(request.args.get('team', ''))
-        player_id = str(request.args.get('player', ''))
-        rep_id = str(request.args.get('ideal_id', ''))
-
-        # Open the team df
-        filename = 'webapp_dict_team.sav'
-        df_team  = pickle.load(open(filename, 'rb'))
-
-        # Open the player df
-        filename = 'webapp_dict_player.sav'
-        df_player  = pickle.load(open(filename, 'rb'))
-
-        team_name = df_team.loc[int(team_id)]['team_name']
-
-        player_name = df_player.loc[int(player_id)]['name']
-        rep_name    = df_player.loc[int(rep_id)]['name']
-
-        # Do the similarity test
-        filename = 'webapp_dict_similarity.sav'
-        df_similarity = pickle.load(open(filename, 'rb'))
-
-        df_dist = df_similarity
-        df_dist['dist'] = df_similarity['rating']*0.0
-
-        column_vec = ['prize', 'rating', 'hs_perc', 'kills_per_round','deaths_per_round', 'ADR']
-        for column in column_vec:
-            df_dist[column] = (df_similarity[column]-df_similarity.loc[int(rep_id)][column])**2
-            df_dist['dist'] = df_dist['dist'] + df_dist[column]
-
-
-        df_dist = df_dist.sort_values('dist',ascending=True)
-
-        n_sug = 10
-        suggested_name_vec = df_dist['name'].values[0:n_sug]
-        suggested_id_vec = df_dist.index.values[0:n_sug]
-
-        prize_rating = df_dist['prize'].values[0:n_sug]
-        rating = df_dist['rating'].values[0:n_sug]
-        hs = df_dist['hs_perc'].values[0:n_sug] 
-        kills_per_round = df_dist['kills_per_round'].values[0:n_sug]
-        deaths_per_round = df_dist['deaths_per_round'].values[0:n_sug]
-        adr  = df_dist['ADR'].values[0:n_sug]
-
-        n_sug = len(suggested_id_vec)
-
-
-    return render_template('suggest.html',title='Results',team_id=team_id,player_id=player_id,team_name=team_name,player_name=player_name,rep_name=rep_name,
-        suggested_name_vec=suggested_name_vec,suggested_id_vec=suggested_id_vec,n_sug=n_sug,
-        prize_rating=["%.2f" % number for number in prize_rating],
-        rating=["%.2f" % number for number in rating],
-        hs=["%.2f" % number for number in hs],
-        kills_per_round=["%.2f" % number for number in kills_per_round],
-        deaths_per_round=["%.2f" % number for number in deaths_per_round],
-        adr=["%.2f" % number for number in adr] )
 
 
 # Results
@@ -156,11 +123,11 @@ def results():
         ideal_id = str(request.args.get('ideal_id', ''))
 
         # Open the team df
-        filename = 'webapp_dict_team.sav'
+        filename = 'webapp_dict_team_feb9.sav'
         df_team  = pickle.load(open(filename, 'rb'))
 
         # Open the player df
-        filename = 'webapp_dict_player.sav'
+        filename = 'webapp_dict_player_feb9.sav'
         df_player  = pickle.load(open(filename, 'rb'))
 
         team_name = df_team.loc[int(team_id)]['team_name']
