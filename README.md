@@ -1,5 +1,5 @@
 # moneyball-csgo
-This repository includes the source code for the web app of the CS:GO Moneybal App: http://helmholtzanalytics.xyz/
+This project was part of my Insight Data Science fellowship in 2020.
 
 <img src="demo_csgo_lowres.gif" alt="drawing" width="500"/>
 
